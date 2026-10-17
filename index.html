@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dò Vé Số</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#fff8ee;--card:#fff;--tx:#2b2118;--mu:#7a6a58;--ac:#d62828;--ok:#1b8a4b;--bd:#ecdcc4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1712;--card:#272019;--tx:#f5ece0;--mu:#b5a590;--bd:#3d3326}}
+:root[data-theme="dark"]{--bg:#1c1712;--card:#272019;--tx:#f5ece0;--mu:#b5a590;--bd:#3d3326}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 12px}h2{font-size:17px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:14px;color:var(--mu);margin:8px 0 4px}
+input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+input.num{font-size:26px;letter-spacing:4px;text-align:center;font-weight:700}
+button,.btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:700 17px inherit;margin-top:10px;text-align:center;text-decoration:none;cursor:pointer}
+button.sec,.btn.sec{background:transparent;color:var(--ac);border:2px solid var(--ac)}
+.tabs{display:flex;gap:8px}.tabs button{margin:0;font-size:15px}
+.win{border:2px solid var(--ok)}.big{font-size:30px;font-weight:800;color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:15px}td{padding:6px 0;border-bottom:1px dashed var(--bd)}td:last-child{text-align:right;font-weight:600}
+small,.mu{color:var(--mu);font-size:13px}ul{padding-left:20px;margin:6px 0}
+.hide{display:none}img{max-width:100%;border-radius:10px;margin-top:8px}
+input[type=range]{padding:0}
+</style></head><body><main>
+<h1>🎟️ Dò Vé Số Việt Nam</h1>
+<div class="tabs" style="margin-bottom:12px"><button id="k1" onclick="kind(1)">🎫 Xổ số truyền thống</button><button id="k2" class="sec" onclick="kind(2)">💎 Vietlott</button></div>
+<div class="card hide" id="c2">
+ <label>Loại vé</label><select id="vg" onchange="vgc()"><option value="m">Mega 6/45 (quay Thứ 4, Thứ 6, Chủ nhật)</option><option value="p">Power 6/55 (quay Thứ 3, Thứ 5, Thứ 7)</option></select>
+ <label>6 số trên vé của bạn (cách nhau bằng khoảng trắng)</label><input class="num" id="vt" inputmode="numeric" style="font-size:20px;letter-spacing:1px" placeholder="05 12 23 34 40 45">
+ <label>Kết quả kỳ quay <span id="vh">(6 số)</span></label><input class="num" id="vr" inputmode="numeric" style="font-size:20px;letter-spacing:1px" placeholder="05 12 23 34 40 45">
+ <label>Giá trị Jackpot kỳ này (đồng) <small>theo thông báo của Vietlott</small></label><input id="vj" inputmode="numeric" placeholder="12000000000">
+ <div id="vj2w" class="hide"><label>Giá trị Jackpot 2 (đồng)</label><input id="vj2" inputmode="numeric" placeholder="3000000000"></div>
+ <button class="sec" onclick="vdemo()">Dùng kết quả mẫu để thử</button>
+ <button onclick="check2()">DÒ VÉ VIETLOTT</button>
+ <p class="mu">Đối chiếu kết quả chính thức tại <a href="https://vietlott.vn" target="_blank" rel="noopener">vietlott.vn</a>. Jackpot thay đổi theo từng kỳ nên cần nhập đúng số tiền.</p>
+</div>
+
+<div class="card">
+ <div class="tabs"><button id="t1" onclick="tab(1)">📷 Chụp vé</button><button id="t2" class="sec" onclick="tab(2)">⌨️ Nhập số</button></div>
+ <div id="p1" class="hide">
+  <label>Chụp hoặc chọn ảnh vé số</label>
+  <input type="file" accept="image/*" capture="environment" id="f" onchange="pic(this)">
+  <img id="pv" class="hide" alt="">
+  <small>Bản mẫu chưa tự đọc số từ ảnh (cần OCR trong app thật). Xem ảnh rồi nhập 6 số bên dưới.</small>
+ </div>
+ <label>Số vé (6 số; vé miền Bắc 5 số)</label>
+ <input class="num" id="no" inputmode="numeric" maxlength="6" placeholder="••••••">
+ <label>Ngày mở thưởng</label><input type="date" id="dt">
+ <label>Tỉnh/thành phát hành</label>
+ <select id="pr" onchange="reg()"></select>
+ <div id="srw" class="hide"><label>Ký hiệu vé (vé miền Bắc, vd 12AB)</label><input id="sr" maxlength="4" placeholder="12AB"></div>
+ <label>Kết quả xổ số của ngày đó <small>(dán từ trang uy tín bên dưới, mỗi giải một dòng, vd: <b>G1: 12345</b>; vé miền Bắc thêm dòng <b>KH: 12AB 5CD</b> là ký hiệu giải ĐB)</small></label>
+ <textarea id="rs" rows="7" placeholder="DB: 123456&#10;G1: 12345&#10;G2: 12345&#10;G3: 12345 12345&#10;G4: ..."></textarea>
+ <button class="sec" onclick="demo()">Dùng kết quả mẫu để thử</button>
+ <button onclick="check()">DÒ VÉ NGAY</button>
+ <p class="mu">Nguồn đối chiếu uy tín: <a href="https://www.minhngoc.net.vn" target="_blank" rel="noopener">Minh Ngọc</a> · <a href="https://xskt.com.vn" target="_blank" rel="noopener">XSKT</a> · <a href="https://www.xosodaiphat.com" target="_blank" rel="noopener">Đại Phát</a> · Cổng công ty XSKT từng tỉnh</p>
+</div>
+<div id="out"></div>
+<p class="mu">Cơ cấu giải thưởng có thể thay đổi theo từng công ty XSKT và từng thời kỳ; bản mẫu mang tính tham khảo; luôn đối chiếu kết quả chính thức của công ty XSKT phát hành. Thông tin thuế/chi tiêu không phải tư vấn tài chính hay pháp lý.</p>
+
+<script>
+const P=["TP.HCM","Đồng Tháp","Cà Mau","Bến Tre","Vũng Tàu","Bạc Liêu","Đồng Nai","Cần Thơ","Sóc Trăng","Tây Ninh","An Giang","Bình Thuận","Vĩnh Long","Bình Dương","Trà Vinh","Long An","Bình Phước","Hậu Giang","Tiền Giang","Kiên Giang","Đà Lạt","Đà Nẵng","Khánh Hòa","Huế","Phú Yên","Quảng Nam","Quảng Ngãi","Bình Định","Quảng Bình","Quảng Trị","Gia Lai","Ninh Thuận","Đắk Lắk","Đắk Nông","Kon Tum","Hà Nội (Miền Bắc)","Quảng Ninh (Miền Bắc)","Bắc Ninh (Miền Bắc)","Hải Phòng (Miền Bắc)","Nam Định (Miền Bắc)","Thái Bình (Miền Bắc)"];
+document.getElementById('pr').innerHTML=P.map(p=>`<option>${p}</option>`).join('');
+dt.valueAsDate=new Date();
+// Giải thưởng vé 10.000đ (miền Nam/Trung, vé 6 số): [tên, số chữ số cuối cần khớp, tiền]
+const PZ={DB:["Giải Đặc biệt",6,2e9],G1:["Giải Nhất",5,3e7],G2:["Giải Nhì",5,1.5e7],G3:["Giải Ba",5,1e7],G4:["Giải Tư",5,3e6],G5:["Giải Năm",4,1e6],G6:["Giải Sáu",4,4e5],G7:["Giải Bảy",3,2e5],G8:["Giải Tám",2,1e5]};
+const PN={DB:["Giải Đặc biệt",5,5e8],G1:["Giải Nhất",5,1e7],G2:["Giải Nhì",5,5e6],G3:["Giải Ba",5,1e6],G4:["Giải Tư",4,4e5],G5:["Giải Năm",4,2e5],G6:["Giải Sáu",3,1e5],G7:["Giải Bảy",2,4e4]};
+const FUN=["Chưa trúng thì mình giữ tiền mua... ly trà đá ăn mừng sức khỏe! 🧋","Vé trượt nhưng nụ cười thì trúng độc đắc rồi nha 😄","Hôm nay trượt, ngày mai biết đâu vũ trụ gửi quà bất ngờ. Cứ vui nhé! 🌈","Con số may mắn đang đi lạc đường, chắc sắp tìm đến bạn thôi 🧭","Không trúng số nhưng bạn trúng sức khỏe, gia đình, bình an. Giải này còn quý hơn! 💛","Vé này nghỉ ngơi, bạn thì cứ tiếp tục lạc quan, làm việc chăm chỉ. May mắn thích người tươi tắc! ✨"];
+const $=id=>document.getElementById(id), vnd=n=>Math.round(n).toLocaleString('vi-VN')+" đ";
+const isMB=()=>/Miền Bắc/.test($('pr').value);
+function reg(){const m=isMB();$('srw').classList.toggle('hide',!m);$('no').maxLength=m?5:6;$('no').value=$('no').value.slice(0,m?5:6)}
+function tab(n){$('p1').classList.toggle('hide',n!=1);$('t1').className=n==1?'':'sec';$('t2').className=n==2?'':'sec'}
+function pic(i){const f=i.files[0];if(!f)return;const v=$('pv');v.src=URL.createObjectURL(f);v.classList.remove('hide')}
+function demo(){if(isMB()){$('rs').value="DB: 12345\nKH: 1AB 2CD 3EF\nG1: 22222\nG2: 33333 44444\nG3: 55555 66666 77777 88888 99999 10101\nG4: 1111 2222 3333 4444\nG5: 5555 6666 7777 8888 9999 1010\nG6: 111 222 333\nG7: "+($('no').value||"12345").slice(-2)+" 34 56 78";return}const n=$('no').value||"123456";$('rs').value=`DB: 654321\nG1: 11111\nG2: 22222\nG3: 33333 44444\nG4: 55555 66666 77777 88888 99999 10101 20202\nG5: 3030\nG6: 4040 5050 6060\nG7: 707\nG8: ${n.slice(-2)}`}
+function parse(t){const r={};t.split(/\n/).forEach(l=>{const m=l.match(/^\s*(DB|G[1-8]|KH|ĐB|Đặc biệt)\s*[:\-]?\s*(.*)$/i);if(!m)return;let k=m[1].toUpperCase().replace('Đ','D');if(k.startsWith('DẶC')||k.startsWith('DAC'))k='DB';r[k]=(m[2].match(k==='KH'?/\d{1,2}[A-Za-z]{2}/g:/\d+/g)||[])});return r}
+function check(){
+ const n=$('no').value.trim(),R=parse($('rs').value);
+ const mb=isMB();if(!(mb?/^\d{5}$/:/^\d{6}$/).test(n))return $('out').innerHTML=card("⚠️ Hãy nhập đủ "+(mb?5:6)+" chữ số của vé.");
+ if(!Object.keys(R).length)return $('out').innerHTML=card("⚠️ Hãy dán kết quả xổ số của ngày đó (hoặc bấm “Dùng kết quả mẫu”).");
+ let hits=[],note="";const Z=mb?PN:PZ;
+ for(const k in Z){const [nm,d,m]=Z[k];(R[k]||[]).forEach(x=>{if(x.length>=d&&n.slice(-d)===x.slice(-d))hits.push({nm,m})})}
+ // Giải phụ đặc biệt: trùng 5 số cuối giải ĐB, sai số đầu tiên
+ const db=(R.DB||[])[0];
+ if(mb){const kh=$('sr').value.trim().toUpperCase(),dbk=(R.KH||[]).map(s=>s.toUpperCase());
+  if(db&&n===db){if(dbk.length&&kh){if(!dbk.includes(kh)){hits=hits.filter(h=>h.nm!=="Giải Đặc biệt");hits.push({nm:"Giải phụ Đặc biệt",m:2.5e7})}}else note="Trùng 5 số giải Đặc biệt! Hãy đối chiếu ký hiệu vé: đúng ký hiệu là 500 triệu, sai ký hiệu là giải phụ 25 triệu."}
+  if(db&&n!==db&&n.slice(-2)===db.slice(-2))hits.push({nm:"Giải khuyến khích",m:4e4})}
+ else if(db&&n!==db){if(n.slice(1)===db.slice(1))hits.push({nm:"Giải phụ Đặc biệt",m:5e7});else if(n[0]===db[0]){let d=0;for(let i=1;i<6;i++)if(n[i]!==db[i])d++;if(d===1)hits.push({nm:"Giải khuyến khích",m:6e6})}}
+ if(!hits.length)return $('out').innerHTML=card(`<h2>😅 Rất tiếc, vé ${n} chưa trúng</h2><p>${FUN[Math.floor(Math.random()*FUN.length)]}</p>`);
+ return win(hits,note)}
+function win(hits,note){const gross=hits.reduce((s,h)=>s+h.m,0),tax=hits.reduce((s,h)=>s+Math.max(0,h.m-1e7)*0.1,0),net=gross-tax;
+ const vl=hits.vl,place=vl?"Vietlott":$('pr').value,q=encodeURIComponent(vl?"điểm bán hàng Vietlott":"đại lý vé số "+place);
+ const A=[["Đầu tư an toàn (gửi tiết kiệm, trái phiếu, chứng chỉ quỹ)",30],["Quỹ khẩn cấp",15],["Giúp đỡ gia đình",15],["Nâng cao chất lượng sống (học tập, sức khỏe, nhà ở)",15],["Bảo hiểm / hưu trí",15],["Làm từ thiện",10]];
+ $('out').innerHTML=`<div class="card win"><h2>🎉 CHÚC MỪNG! VÉ TRÚNG THƯỞNG</h2>
+ <table>${hits.map(h=>`<tr><td>${h.nm}</td><td>${vnd(h.m)}</td></tr>`).join('')}
+ <tr><td>Tổng tiền thưởng</td><td>${vnd(gross)}</td></tr>
+ <tr><td>Thuế TNCN 10% (phần trên 10 triệu/vé)</td><td>− ${vnd(tax)}</td></tr></table>
+ ${note?`<p><b>⚠️ ${note}</b></p>`:''}<p>Thực nhận:</p><div class="big">${vnd(net)}</div></div>
+ <div class="card"><h2>📍 Nơi đổi thưởng an toàn</h2><ul>${vl?'<li>Giải nhỏ: điểm bán hàng Vietlott.</li><li>Jackpot/giải lớn: trực tiếp tại trụ sở hoặc chi nhánh Công ty Vietlott, mang theo vé gốc và giấy tờ tùy thân.</li>':'<li>Giải nhỏ: đại lý vé số uy tín nơi phát hành.</li><li>Giải lớn: trực tiếp tại <b>Công ty XSKT '+place+'</b> (trụ sở chính thức).</li>'}</ul>
+ <a class="btn sec" target="_blank" rel="noopener" href="https://www.google.com/maps/search/${q}">Mở bản đồ tìm gần tôi</a>
+ <a class="btn sec" target="_blank" rel="noopener" href="https://www.google.com/maps/search/${encodeURIComponent(vl?'trụ sở Vietlott':'công ty xổ số kiến thiết '+place)}">${vl?'Trụ sở Vietlott':'Công ty XSKT '+place}</a>
+ <small>Hạn lĩnh thưởng thường là 60 ngày kể từ ngày mở thưởng, hãy kiểm tra mặt sau vé.</small></div>
+ <div class="card"><h2>🔒 Lưu ý bảo mật</h2><ul><li>Chụp ảnh 2 mặt vé rồi cất vé nơi an toàn; ký tên mặt sau.</li><li>Đừng khoe lên mạng xã hội; chỉ báo người thật sự tin cậy.</li><li>Cảnh giác tin nhắn/cuộc gọi “nhận thưởng phải đóng phí”: đây là lừa đảo.</li><li>Đi đổi thưởng ban ngày, có người thân đi cùng, nên nhận chuyển khoản.</li><li>Không đưa vé gốc cho người lạ “đổi giúp”.</li></ul></div>
+ <div class="card"><h2>💰 Gợi ý phân bổ <small>(kéo ô nhập để thử)</small></h2>
+ <table>${A.map(a=>`<tr><td>${a[0]} (${a[1]}%)</td><td>${vnd(net*a[1]/100)}</td></tr>`).join('')}</table>
+ <small>Ý tưởng đầu tư an toàn: gửi tiết kiệm kỳ hạn tại ngân hàng lớn, trái phiếu Chính phủ, quỹ khẩn cấp 6 tháng chi tiêu, bảo hiểm sức khỏe, trả nợ lãi cao trước. Hãy tham khảo chuyên gia tài chính được cấp phép.</small></div>`}
+function card(h){return `<div class="card">${h}</div>`}
+function kind(n){const c=document.querySelector('main > .card:not(#c2)');c.classList.toggle('hide',n!=1);$('c2').classList.toggle('hide',n!=2);$('k1').className=n==1?'':'sec';$('k2').className=n==2?'':'sec';$('out').innerHTML=''}
+function vgc(){const p=$('vg').value==='p';$('vj2w').classList.toggle('hide',!p);$('vh').textContent=p?'(6 số + số phụ ở cuối)':'(6 số)'}
+function vdemo(){$('vr').value=$('vg').value==='p'?'05 12 23 34 40 45 07':'05 12 23 34 40 45'}
+function check2(){const p=$('vg').value==='p',mx=p?55:45,nums=s=>(s.match(/\d+/g)||[]).map(Number),money=id=>+($(id).value.replace(/\D/g,''));
+ const t=nums($('vt').value),r=nums($('vr').value),need=p?7:6;
+ const ok=(a,c)=>a.length===c&&new Set(a).size===c&&a.every(x=>x>=1&&x<=mx);
+ if(!ok(t,6))return $('out').innerHTML=card('⚠️ Hãy nhập đủ 6 số khác nhau (từ 01 đến '+mx+') của vé.');
+ if(!ok(r,need))return $('out').innerHTML=card('⚠️ Hãy nhập kết quả kỳ quay: '+need+' số'+(p?' (6 số + số phụ)':'')+', từ 01 đến '+mx+'.');
+ const w=r.slice(0,6),m=t.filter(x=>w.includes(x)).length,b=p&&t.includes(r[6]);
+ const j1=money('vj')||(p?3e10:1.2e10),j2=money('vj2')||3e9;
+ let h=[];
+ if(m===6)h.push({nm:p?'Jackpot 1':'Jackpot',m:j1});else if(p&&m===5&&b)h.push({nm:'Jackpot 2',m:j2});else if(m===5)h.push({nm:'Giải Nhất',m:p?4e7:1e7});else if(m===4)h.push({nm:'Giải Nhì',m:p?5e5:3e5});else if(m===3)h.push({nm:'Giải Ba',m:p?5e4:3e4});
+ if(!h.length)return $('out').innerHTML=card(`<h2>😅 Rất tiếc, vé chưa trúng (trùng ${m}/6 số)</h2><p>${FUN[Math.floor(Math.random()*FUN.length)]}</p>`);
+ h.vl=true;return win(h,'')}
+tab(2);
+</script></main></body></html>
