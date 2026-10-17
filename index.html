@@ -55,13 +55,13 @@ input[type=range]{padding:0}
  <label>Tỉnh/thành phát hành</label>
  <select id="pr" onchange="reg()"></select>
  <div id="srw" class="hide"><label>Ký hiệu vé (vé miền Bắc, vd 12AB)</label><input id="sr" maxlength="4" placeholder="12AB"></div>
- <label>Kết quả xổ số của ngày đó <small>(dán từ trang uy tín bên dưới, mỗi giải một dòng, vd: <b>G1: 12345</b>; vé miền Bắc thêm dòng <b>KH: 12AB 5CD</b> là ký hiệu giải ĐB)</small></label>
+ <details style="margin-top:8px"><summary>Nâng cao: tự dán kết quả</summary><label>Kết quả xổ số của ngày đó <small>(dán từ trang uy tín bên dưới, mỗi giải một dòng, vd: <b>G1: 12345</b>; vé miền Bắc thêm dòng <b>KH: 12AB 5CD</b> là ký hiệu giải ĐB)</small></label>
  <textarea id="rs" rows="7" placeholder="DB: 123456&#10;G1: 12345&#10;G2: 12345&#10;G3: 12345 12345&#10;G4: ..."></textarea>
- <button class="sec" onclick="demo()">Dùng kết quả mẫu để thử</button>
+ <button class="sec" onclick="demo()">Dùng kết quả mẫu để thử</button></details>
  <button onclick="check()">DÒ VÉ NGAY</button>
  <p class="mu">Nguồn đối chiếu uy tín: <a href="https://www.minhngoc.net.vn" target="_blank" rel="noopener">Minh Ngọc</a> · <a href="https://xskt.com.vn" target="_blank" rel="noopener">XSKT</a> · <a href="https://www.xosodaiphat.com" target="_blank" rel="noopener">Đại Phát</a> · Cổng công ty XSKT từng tỉnh</p>
 </div>
-<div id="out"></div>
+<div id="out"></div><p id="src" class="mu"></p>
 <p class="mu">Cơ cấu giải thưởng có thể thay đổi theo từng công ty XSKT và từng thời kỳ; bản mẫu mang tính tham khảo; luôn đối chiếu kết quả chính thức của công ty XSKT phát hành. Thông tin thuế/chi tiêu không phải tư vấn tài chính hay pháp lý.</p>
 
 <script>
@@ -80,7 +80,8 @@ function pic(i){const f=i.files[0];if(!f)return;const v=$('pv');v.src=URL.create
 function demo(){if(isMB()){$('rs').value="DB: 12345\nKH: 1AB 2CD 3EF\nG1: 22222\nG2: 33333 44444\nG3: 55555 66666 77777 88888 99999 10101\nG4: 1111 2222 3333 4444\nG5: 5555 6666 7777 8888 9999 1010\nG6: 111 222 333\nG7: "+($('no').value||"12345").slice(-2)+" 34 56 78";return}const n=$('no').value||"123456";$('rs').value=`DB: 654321\nG1: 11111\nG2: 22222\nG3: 33333 44444\nG4: 55555 66666 77777 88888 99999 10101 20202\nG5: 3030\nG6: 4040 5050 6060\nG7: 707\nG8: ${n.slice(-2)}`}
 function parse(t){const r={};t.split(/\n/).forEach(l=>{const m=l.match(/^\s*(DB|G[1-8]|KH|ĐB|Đặc biệt)\s*[:\-]?\s*(.*)$/i);if(!m)return;let k=m[1].toUpperCase().replace('Đ','D');if(k.startsWith('DẶC')||k.startsWith('DAC'))k='DB';r[k]=(m[2].match(k==='KH'?/\d{1,2}[A-Za-z]{2}/g:/\d+/g)||[])});return r}
 function check(){
- const n=$('no').value.trim(),R=parse($('rs').value);
+ const n=$('no').value.trim(),manual=$('rs').value.trim(),R=manual?parse(manual):lookup();
+ if(!manual&&!Object.keys(R).length)return $('out').innerHTML=card('⏳ Chưa có kết quả đài này cho ngày đã chọn. Kết quả thường được cập nhật sau giờ quay (khoảng 16:30 miền Nam, 17:30 miền Trung, 18:30 miền Bắc). Hãy thử lại sau và kiểm tra đúng ngày, đúng đài.');
  const mb=isMB();if(!(mb?/^\d{5}$/:/^\d{6}$/).test(n))return $('out').innerHTML=card("⚠️ Hãy nhập đủ "+(mb?5:6)+" chữ số của vé.");
  if(!Object.keys(R).length)return $('out').innerHTML=card("⚠️ Hãy dán kết quả xổ số của ngày đó (hoặc bấm “Dùng kết quả mẫu”).");
  let hits=[],note="";const Z=mb?PN:PZ;
@@ -124,5 +125,8 @@ function check2(){const p=$('vg').value==='p',mx=p?55:45,nums=s=>(s.match(/\d+/g
  if(m===6)h.push({nm:p?'Jackpot 1':'Jackpot',m:j1});else if(p&&m===5&&b)h.push({nm:'Jackpot 2',m:j2});else if(m===5)h.push({nm:'Giải Nhất',m:p?4e7:1e7});else if(m===4)h.push({nm:'Giải Nhì',m:p?5e5:3e5});else if(m===3)h.push({nm:'Giải Ba',m:p?5e4:3e4});
  if(!h.length)return $('out').innerHTML=card(`<h2>😅 Rất tiếc, vé chưa trúng (trùng ${m}/6 số)</h2><p>${FUN[Math.floor(Math.random()*FUN.length)]}</p>`);
  h.vl=true;return win(h,'')}
+let DBR={};
+fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.'}).catch(()=>{});
+function lookup(){return DBR[$('dt').value+'|'+(isMB()?'MB':$('pr').value)]||{}}
 tab(2);
 </script></main></body></html>
