@@ -47,7 +47,7 @@ input[type=range]{padding:0}
   <label>Chụp hoặc chọn ảnh vé số</label>
   <input type="file" accept="image/*" capture="environment" id="f" onchange="pic(this)">
   <img id="pv" class="hide" alt="">
-  <small>Bản mẫu chưa tự đọc số từ ảnh (cần OCR trong app thật). Xem ảnh rồi nhập 6 số bên dưới.</small>
+  <div id="ocrmsg" class="mu"></div><div id="ocrc"></div><small>Mẹo chụp: để vé nằm phẳng, đủ sáng, không bị bóng hay chói, chụp gần dãy số lớn nhất trên vé. Luôn so lại số app đọc với số trên vé.</small>
  </div>
  <label>Số vé (6 số; vé miền Bắc 5 số)</label>
  <input class="num" id="no" inputmode="numeric" maxlength="6" placeholder="••••••">
@@ -76,7 +76,7 @@ const $=id=>document.getElementById(id), vnd=n=>Math.round(n).toLocaleString('vi
 const isMB=()=>/Miền Bắc/.test($('pr').value);
 function reg(){const m=isMB();$('srw').classList.toggle('hide',!m);$('no').maxLength=m?5:6;$('no').value=$('no').value.slice(0,m?5:6)}
 function tab(n){$('p1').classList.toggle('hide',n!=1);$('t1').className=n==1?'':'sec';$('t2').className=n==2?'':'sec'}
-function pic(i){const f=i.files[0];if(!f)return;const v=$('pv');v.src=URL.createObjectURL(f);v.classList.remove('hide')}
+function pic(i){const f=i.files[0];if(!f)return;const v=$('pv');v.src=URL.createObjectURL(f);v.classList.remove('hide');ocr(f)}
 function demo(){if(isMB()){$('rs').value="DB: 12345\nKH: 1AB 2CD 3EF\nG1: 22222\nG2: 33333 44444\nG3: 55555 66666 77777 88888 99999 10101\nG4: 1111 2222 3333 4444\nG5: 5555 6666 7777 8888 9999 1010\nG6: 111 222 333\nG7: "+($('no').value||"12345").slice(-2)+" 34 56 78";return}const n=$('no').value||"123456";$('rs').value=`DB: 654321\nG1: 11111\nG2: 22222\nG3: 33333 44444\nG4: 55555 66666 77777 88888 99999 10101 20202\nG5: 3030\nG6: 4040 5050 6060\nG7: 707\nG8: ${n.slice(-2)}`}
 function parse(t){const r={};t.split(/\n/).forEach(l=>{const m=l.match(/^\s*(DB|G[1-8]|KH|ĐB|Đặc biệt)\s*[:\-]?\s*(.*)$/i);if(!m)return;let k=m[1].toUpperCase().replace('Đ','D');if(k.startsWith('DẶC')||k.startsWith('DAC'))k='DB';r[k]=(m[2].match(k==='KH'?/\d{1,2}[A-Za-z]{2}/g:/\d+/g)||[])});return r}
 function check(){
@@ -125,6 +125,25 @@ function check2(){const p=$('vg').value==='p',mx=p?55:45,nums=s=>(s.match(/\d+/g
  if(m===6)h.push({nm:p?'Jackpot 1':'Jackpot',m:j1});else if(p&&m===5&&b)h.push({nm:'Jackpot 2',m:j2});else if(m===5)h.push({nm:'Giải Nhất',m:p?4e7:1e7});else if(m===4)h.push({nm:'Giải Nhì',m:p?5e5:3e5});else if(m===3)h.push({nm:'Giải Ba',m:p?5e4:3e4});
  if(!h.length)return $('out').innerHTML=card(`<h2>😅 Rất tiếc, vé chưa trúng (trùng ${m}/6 số)</h2><p>${FUN[Math.floor(Math.random()*FUN.length)]}</p>`);
  h.vl=true;return win(h,'')}
+let TW=null;
+function loadT(){return new Promise((ok,no)=>{if(window.Tesseract)return ok();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>no(new Error('load'));document.head.appendChild(s)})}
+function prep(file){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1800/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);const x=c.getContext('2d');x.drawImage(im,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height),p=d.data,h=new Array(256).fill(0);
+for(let i=0;i<p.length;i+=4){const g=Math.round(.299*p[i]+.587*p[i+1]+.114*p[i+2]);p[i]=p[i+1]=p[i+2]=g;h[g]++}
+const T=c.width*c.height;let a=0,lo=0,hi=255;while(lo<255&&(a+=h[lo])<T*.02)lo++;a=0;while(hi>0&&(a+=h[hi])<T*.02)hi--;const r=Math.max(1,hi-lo);
+for(let i=0;i<p.length;i+=4){const v=Math.max(0,Math.min(255,(p[i]-lo)*255/r));p[i]=p[i+1]=p[i+2]=v}x.putImageData(d,0,0);ok(c)};im.onerror=no;im.src=URL.createObjectURL(file)})}
+function pick(n){$('no').value=n;$('ocrmsg').textContent='✅ Đã điền số '+n+'. Hãy so lại với số trên vé trước khi dò.'}
+async function ocr(file){const m=$('ocrmsg'),box=$('ocrc');box.innerHTML='';m.textContent='⏳ Đang đọc số từ ảnh... Lần đầu có thể mất khoảng 20–30 giây vì cần tải bộ đọc chữ (cần có mạng).';
+ try{await loadT();const c=await prep(file);
+  if(!TW){TW=await Tesseract.createWorker('eng');await TW.setParameters({tessedit_char_whitelist:'0123456789/-. ',tessedit_pageseg_mode:'11'})}
+  const {data}=await TW.recognize(c),L=isMB()?5:6,seen={},list=[];
+  (data.words||[]).forEach(w=>{const t=(w.text||'').replace(/\D/g,'');if(t.length>=5&&t.length<=6&&!seen[t]){seen[t]=1;list.push({n:t,h:w.bbox.y1-w.bbox.y0,ok:t.length===L})}});
+  list.sort((a,b)=>(b.ok-a.ok)||(b.h-a.h));
+  const dm=(data.text||'').match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4}|\d{2})\b/);
+  let dtxt='';if(dm){let d=+dm[1],mo=+dm[2],y=+dm[3];if(y<100)y+=2000;if(d>=1&&d<=31&&mo>=1&&mo<=12&&y>=2020&&y<=2040){$('dt').value=y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');dtxt=' Ngày đọc được: '+d+'/'+mo+'/'+y+' (hãy kiểm tra).'}}
+  if(!list.length){m.textContent='😕 Chưa đọc được số vé. Hãy chụp lại gần hơn, đủ sáng, hoặc nhập số bằng tay.'+dtxt;return}
+  box.innerHTML=list.slice(0,4).map(x=>'<button class="sec" style="font-size:24px;letter-spacing:3px" onclick="pick(\''+x.n+'\')">'+x.n+'</button>').join('');
+  if(list[0].ok){pick(list[0].n);m.textContent+=dtxt+(list.length>1?' Nếu sai, bấm số đúng bên dưới.':'')}else m.textContent='⚠️ Đọc được các số bên dưới nhưng chưa chắc là số vé. Bấm số đúng hoặc nhập tay.'+dtxt;
+ }catch(e){m.textContent='⚠️ Không đọc được ảnh (lần đầu cần có mạng). Bạn hãy nhập số bằng tay nhé.'}}
 let DBR={};
 fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.'}).catch(()=>{});
 function lookup(){return DBR[$('dt').value+'|'+(isMB()?'MB':$('pr').value)]||{}}
