@@ -27,6 +27,17 @@ table{width:100%;border-collapse:collapse;font-size:15px}td{padding:6px 0;border
 small,.mu{color:var(--mu);font-size:13px}ul{padding-left:20px;margin:6px 0}
 .hide{display:none}img{max-width:100%;border-radius:10px;margin-top:8px}
 input[type=range]{padding:0}
+#scan{position:fixed;inset:0;z-index:50;background:#000;color:#fff;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#scan.on{display:flex}
+#sw{position:relative;flex:1;min-height:0;overflow:hidden;background:#111}
+#vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#gb{position:absolute;border:3px solid #ffd60a;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none}
+#sbar{padding:10px 14px;text-align:center}
+#sst{font-size:16px;min-height:44px;padding:8px 14px;text-align:center}
+#sact{display:flex;flex-wrap:wrap;gap:8px;padding:0 12px 12px}
+#sact button{margin:0;font-size:15px;padding:12px 6px;flex:1 1 30%}
+#sres{display:none;padding:12px;background:#111}
+#sres.on{display:block}
 </style></head><body><main>
 <h1>🎟️ Dò Vé Số Việt Nam</h1>
 <div class="tabs" style="margin-bottom:12px"><button id="k1" onclick="kind(1)">🎫 Xổ số truyền thống</button><button id="k2" class="sec" onclick="kind(2)">💎 Vietlott</button></div>
@@ -42,10 +53,10 @@ input[type=range]{padding:0}
 </div>
 
 <div class="card">
- <div class="tabs"><button id="t1" onclick="tab(1)">📷 Chụp vé</button><button id="t2" class="sec" onclick="tab(2)">⌨️ Nhập số</button></div>
+ <div class="tabs"><button id="t1" onclick="openScan()">📷 Chụp vé</button><button id="t2" class="sec" onclick="tab(2)">⌨️ Nhập số</button></div>
  <div id="p1" class="hide">
   <label>Chụp hoặc chọn ảnh vé số</label>
-  <input type="file" accept="image/*" capture="environment" id="f" onchange="pic(this)">
+  <input type="file" accept="image/*" id="f" onchange="pic(this)">
   <img id="pv" class="hide" alt="">
   <div id="ocrmsg" class="mu"></div><div id="ocrc"></div><small>Mẹo chụp: để vé nằm phẳng, đủ sáng, không bị bóng hay chói, chụp gần dãy số lớn nhất trên vé. Luôn so lại số app đọc với số trên vé.</small>
  </div>
@@ -62,6 +73,11 @@ input[type=range]{padding:0}
  <p class="mu">Nguồn đối chiếu uy tín: <a href="https://www.minhngoc.net.vn" target="_blank" rel="noopener">Minh Ngọc</a> · <a href="https://xskt.com.vn" target="_blank" rel="noopener">XSKT</a> · <a href="https://www.xosodaiphat.com" target="_blank" rel="noopener">Đại Phát</a> · Cổng công ty XSKT từng tỉnh</p>
 </div>
 <div id="out"></div><p id="src" class="mu"></p>
+<div id="scan"><div id="sbar"><b>📷 Đưa dãy số lớn trên vé vào khung vàng</b></div>
+<div id="sw"><video id="vid" playsinline muted autoplay></video><div id="gb"></div></div>
+<div id="sst"></div>
+<div id="sres"><label style="color:#ccc">Số đọc được. Hãy so với vé và sửa nếu sai:</label><input class="num" id="sno" inputmode="numeric" maxlength="6" placeholder="••••••"><div id="schips"></div><button onclick="useNo()">✅ ĐÚNG, DÙNG SỐ NÀY</button><button class="sec" onclick="again()">📷 Đọc lại</button></div>
+<div id="sact"><button onclick="snap()">📸 Chụp</button><button id="tbtn" class="sec" style="display:none" onclick="torch()">🔦 Đèn</button><button class="sec" onclick="$('f').click()">🖼️ Ảnh có sẵn</button><button class="sec" onclick="typeNo()">⌨️ Gõ số</button><button class="sec" onclick="closeScan()">✕ Đóng</button></div></div>
 <p class="mu">Cơ cấu giải thưởng có thể thay đổi theo từng công ty XSKT và từng thời kỳ; bản mẫu mang tính tham khảo; luôn đối chiếu kết quả chính thức của công ty XSKT phát hành. Thông tin thuế/chi tiêu không phải tư vấn tài chính hay pháp lý.</p>
 
 <script>
@@ -76,7 +92,7 @@ const $=id=>document.getElementById(id), vnd=n=>Math.round(n).toLocaleString('vi
 const isMB=()=>/Miền Bắc/.test($('pr').value);
 function reg(){const m=isMB();$('srw').classList.toggle('hide',!m);$('no').maxLength=m?5:6;$('no').value=$('no').value.slice(0,m?5:6)}
 function tab(n){$('p1').classList.toggle('hide',n!=1);$('t1').className=n==1?'':'sec';$('t2').className=n==2?'':'sec'}
-function pic(i){const f=i.files[0];if(!f)return;const v=$('pv');v.src=URL.createObjectURL(f);v.classList.remove('hide');ocr(f)}
+function pic(i){const f=i.files[0];if(!f)return;galleryScan(f);i.value=''}
 function demo(){if(isMB()){$('rs').value="DB: 12345\nKH: 1AB 2CD 3EF\nG1: 22222\nG2: 33333 44444\nG3: 55555 66666 77777 88888 99999 10101\nG4: 1111 2222 3333 4444\nG5: 5555 6666 7777 8888 9999 1010\nG6: 111 222 333\nG7: "+($('no').value||"12345").slice(-2)+" 34 56 78";return}const n=$('no').value||"123456";$('rs').value=`DB: 654321\nG1: 11111\nG2: 22222\nG3: 33333 44444\nG4: 55555 66666 77777 88888 99999 10101 20202\nG5: 3030\nG6: 4040 5050 6060\nG7: 707\nG8: ${n.slice(-2)}`}
 function parse(t){const r={};t.split(/\n/).forEach(l=>{const m=l.match(/^\s*(DB|G[1-8]|KH|ĐB|Đặc biệt)\s*[:\-]?\s*(.*)$/i);if(!m)return;let k=m[1].toUpperCase().replace('Đ','D');if(k.startsWith('DẶC')||k.startsWith('DAC'))k='DB';r[k]=(m[2].match(k==='KH'?/\d{1,2}[A-Za-z]{2}/g:/\d+/g)||[])});return r}
 function check(){
@@ -144,6 +160,47 @@ async function ocr(file){const m=$('ocrmsg'),box=$('ocrc');box.innerHTML='';m.te
   box.innerHTML=list.slice(0,4).map(x=>'<button class="sec" style="font-size:24px;letter-spacing:3px" onclick="pick(\''+x.n+'\')">'+x.n+'</button>').join('');
   if(list[0].ok){pick(list[0].n);m.textContent+=dtxt+(list.length>1?' Nếu sai, bấm số đúng bên dưới.':'')}else m.textContent='⚠️ Đọc được các số bên dưới nhưng chưa chắc là số vé. Bấm số đúng hoặc nhập tay.'+dtxt;
  }catch(e){m.textContent='⚠️ Không đọc được ảnh (lần đầu cần có mạng). Bạn hãy nhập số bằng tay nhé.'}}
+let stream=null,track=null,loopOn=false,busy=false,reads=[],vr=0,ready=false,tOn=false;
+const sst=t=>{$('sst').textContent=t};
+async function initOCR(){await loadT();if(!TW){TW=await Tesseract.createWorker('eng');await TW.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'})}}
+function gbox(){const w=$('sw'),W=w.clientWidth,H=w.clientHeight,gw=W*.92,gh=Math.min(H*.26,gw*.38);return{W,H,gw,gh}}
+function layout(){const v=$('vid');if(!v.videoWidth)return;const {W,H,gw,gh}=gbox(),g=$('gb');g.style.left=(W-gw)/2+'px';g.style.top=(H-gh)/2+'px';g.style.width=gw+'px';g.style.height=gh+'px'}
+function cropBox(){const v=$('vid'),{W,H,gw,gh}=gbox(),vw=v.videoWidth,vh=v.videoHeight,s=Math.max(W/vw,H/vh),ox=(vw-W/s)/2,oy=(vh-H/s)/2;return{x:ox+(W-gw)/2/s,y:oy+(H-gh)/2/s,w:gw/s,h:gh/s}}
+function grab(){const b=cropBox(),k=Math.min(1,700/b.w),c=document.createElement('canvas');c.width=Math.round(b.w*k);c.height=Math.round(b.h*k);c.getContext('2d').drawImage($('vid'),b.x,b.y,b.w,b.h,0,0,c.width,c.height);return c}
+function cl(c){const n=document.createElement('canvas');n.width=c.width;n.height=c.height;n.getContext('2d').drawImage(c,0,0);return n}
+function proc(c,mode){const x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height),p=d.data,n=c.width*c.height,h=new Array(256).fill(0);
+for(let i=0;i<p.length;i+=4){const g=Math.round(.299*p[i]+.587*p[i+1]+.114*p[i+2]);p[i]=g;h[g]++}
+let lo=0,hi=255,a=0;while(lo<255&&(a+=h[lo])<n*.02)lo++;a=0;while(hi>0&&(a+=h[hi])<n*.02)hi--;const r=Math.max(1,hi-lo);
+let th=128;if(mode>0){let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sb=0,wb=0,mx=0;for(let t=0;t<256;t++){wb+=h[t];if(!wb)continue;const wf=n-wb;if(!wf)break;sb+=t*h[t];const m1=sb/wb,m2=(sum-sb)/wf,bt=wb*wf*(m1-m2)*(m1-m2);if(bt>mx){mx=bt;th=t}}}
+for(let i=0;i<p.length;i+=4){let v=Math.max(0,Math.min(255,(p[i]-lo)*255/r));if(mode===1)v=p[i]>th?255:0;if(mode===2)v=p[i]>th?0:255;p[i]=p[i+1]=p[i+2]=v}x.putImageData(d,0,0);return c}
+async function readC(c,psm){await TW.setParameters({tessedit_pageseg_mode:psm});return (await TW.recognize(c)).data}
+const dig=d=>(d.text||'').replace(/\D/g,'');
+async function loop(){if(!loopOn)return;if(!busy&&ready){busy=true;let best=null;try{const d=await readC(proc(cl(grab()),vr++%2),'7'),t=dig(d);if(t.length>=5&&t.length<=6){reads.push(t);reads=reads.slice(-8);const cnt={};reads.forEach(x=>cnt[x]=(cnt[x]||0)+1);sst('Đang đọc: '+t);best=Object.keys(cnt).find(k=>cnt[k]>=2)||null}else sst('Đang tìm số... giữ yên máy, lại gần hơn, đủ sáng.')}catch(e){sst('Lỗi đọc: '+(e.message||e))}busy=false;if(best){loopOn=false;return showRes(best,[])}}setTimeout(loop,250)}
+function showRes(n,others){$('sres').classList.add('on');$('sno').value=n;$('schips').innerHTML=others.map(x=>'<button class="sec" style="font-size:20px;letter-spacing:2px" onclick="$(\'sno\').value=\''+x+'\'">'+x+'</button>').join('');sst(n?'Số này có đúng với vé không?':'Gõ số vé của bạn vào ô bên dưới.')}
+function again(){$('sres').classList.remove('on');reads=[];if(stream&&ready){sst('Đưa số vé vào khung vàng, giữ yên máy.');loopOn=true;loop()}else sst('Bộ đọc chữ chưa sẵn sàng, bạn có thể bấm "Gõ số".')}
+function typeNo(){loopOn=false;showRes('',[]);$('sno').focus()}
+async function snap(){if(!stream||!ready){sst('Chờ một chút, bộ đọc chữ đang tải...');return}loopOn=false;sst('⏳ Đang đọc...');while(busy)await new Promise(r=>setTimeout(r,100));busy=true;let e=[];
+ try{const base=grab(),f={};for(const m of [0,1,2]){const t=dig(await readC(proc(cl(base),m),'7'));if(t.length>=5&&t.length<=6)f[t]=(f[t]||0)+1}e=Object.entries(f).sort((a,b)=>b[1]-a[1]).map(x=>x[0])}catch(x){sst('Lỗi đọc: '+(x.message||x))}
+ busy=false;if(e.length)showRes(e[0],e.slice(1));else{sst('😕 Chưa đọc được. Lại gần hơn, đủ sáng, đặt số vào giữa khung vàng rồi thử lại, hoặc bấm "Gõ số".');loopOn=true;loop()}}
+async function galleryScan(file){loopOn=false;sst('⏳ Đang đọc ảnh... (lần đầu có thể mất khoảng 20 giây)');
+ try{await initOCR();ready=true;const d=await readC(await prep(file),'11'),seen={},list=[];(d.words||[]).forEach(w=>{const t=(w.text||'').replace(/\D/g,'');if(t.length>=5&&t.length<=6&&!seen[t]){seen[t]=1;list.push({n:t,h:w.bbox.y1-w.bbox.y0})}});list.sort((a,b)=>b.h-a.h);
+  if(list.length)showRes(list[0].n,list.slice(1,4).map(x=>x.n));else{sst('😕 Chưa đọc được số trong ảnh. Hãy chụp lại bằng khung vàng hoặc gõ số.');again()}}
+ catch(e){sst('⚠️ Không đọc được ảnh ('+(e.message||e)+'). Hãy bấm "Gõ số".')}}
+function torch(){if(!track)return;tOn=!tOn;track.applyConstraints({advanced:[{torch:tOn}]}).catch(()=>{})}
+function closeScan(){loopOn=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;track=null;$('scan').classList.remove('on');$('sres').classList.remove('on')}
+async function openScan(){$('scan').classList.add('on');$('sres').classList.remove('on');reads=[];sst('📷 Đang mở camera...');let cam=false;
+ try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('NoCamera');
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  const v=$('vid');v.srcObject=stream;await v.play();track=stream.getVideoTracks()[0];
+  try{await track.applyConstraints({advanced:[{focusMode:'continuous'}]})}catch(e){}
+  const cap=track.getCapabilities?track.getCapabilities():{};$('tbtn').style.display=cap.torch?'':'none';layout();cam=true}
+ catch(e){sst('⚠️ Không mở được camera ('+(e.name||e.message||'lỗi')+'). Hãy cho phép dùng camera cho trang này, hoặc bấm "Ảnh có sẵn" / "Gõ số".')}
+ try{if(cam)sst('⏳ Đang chuẩn bị bộ đọc chữ (lần đầu cần mạng, khoảng 20 giây)...');await initOCR();ready=true;if(cam){sst('Đưa số vé vào khung vàng, giữ yên máy.');loopOn=true;loop()}}
+ catch(e){sst('⚠️ Không tải được bộ đọc chữ ('+(e.message||e)+'). Hãy kiểm tra mạng hoặc bấm "Gõ số".')}}
+function useNo(){const n=$('sno').value.replace(/\D/g,'');if(n.length<5||n.length>6){sst('⚠️ Số vé cần 5 hoặc 6 chữ số.');return}closeScan();$('no').value=n;let m='✅ Đã điền số vé '+n+'.';
+ if(n.length===5&&!isMB()){const o=[...$('pr').options].find(x=>/Miền Bắc/.test(x.text));if(o){$('pr').value=o.value;reg();$('no').value=n;m+=' Vé 5 số là vé miền Bắc nên app đã chọn đài miền Bắc.'}}else if(n.length===6&&isMB())m+=' Lưu ý: vé 6 số là vé miền Nam/Trung, hãy chọn lại đúng đài.';
+ $('out').innerHTML=card(m+' Hãy kiểm tra <b>ngày</b> và <b>đài</b> (và ký hiệu vé nếu là miền Bắc), rồi bấm <b>DÒ VÉ NGAY</b>.');$('dt').scrollIntoView({behavior:'smooth',block:'center'})}
+window.addEventListener('resize',layout);
 let DBR={};
 fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.'}).catch(()=>{});
 function lookup(){return DBR[$('dt').value+'|'+(isMB()?'MB':$('pr').value)]||{}}
