@@ -183,8 +183,8 @@ function parseInfo(txt){const T=ASC(txt).replace(/[^A-Z0-9\/\-. ]/g,' ').replace
  const sm=/KY HIEU ?[:.]? ?(\d{1,2}) ?([A-Z]{2})(?![A-Z])/.exec(T);
  return{st,ex,date,sr:sm?sm[1]+sm[2]:''}}
 /*P2*/
-const top=(o,m)=>{let b='',c=0;for(const k in o)if(o[k]>c){c=o[k];b=k}return c>=m?b:''};
-function addInfo(i,w){w=w||1;if(i.st)cs[i.st]=(cs[i.st]||0)+(i.ex?2:1)*w;if(i.date)cd[i.date]=(cd[i.date]||0)+w;if(i.sr)cr[i.sr]=(cr[i.sr]||0)+w;S.st=top(cs,2);S.date=top(cd,2);S.sr=top(cr,2)}
+const topK=(o,m)=>{let b='',c=0;for(const k in o)if(o[k]>c){c=o[k];b=k}return c>=m?b:''};
+function addInfo(i,w){w=w||1;if(i.st)cs[i.st]=(cs[i.st]||0)+(i.ex?2:1)*w;if(i.date)cd[i.date]=(cd[i.date]||0)+w;if(i.sr)cr[i.sr]=(cr[i.sr]||0)+w;S.st=topK(cs,2);S.date=topK(cd,2);S.sr=topK(cr,2)}
 async function initOCR(){await loadT();if(!TW){TW=await Tesseract.createWorker('eng');await TW.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7'})}}
 async function initTX(){await loadT();if(!TX)TX=await Tesseract.createWorker('vie')}
 function gbox(){const w=$('sw'),W=w.clientWidth,H=w.clientHeight,gw=W*.92,gh=mode==='info'?Math.min(H*.45,gw*.75):Math.min(H*.26,gw*.38);return{W,H,gw,gh}}
