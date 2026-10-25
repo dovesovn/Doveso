@@ -40,9 +40,15 @@ input[type=range]{padding:0}
 #sres.on{display:block;max-height:62vh;overflow:auto}
 #scan label{color:#ccc}
 #scan.form #sact{display:none}
+.tk{display:flex;gap:10px;align-items:flex-start;border-bottom:1px dashed var(--bd);padding:10px 0}
+.tk img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+.tkn{font-size:24px;font-weight:800;letter-spacing:3px}
+.tkb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.tkb button,.tkb a{margin:0;width:auto;padding:8px 10px;font-size:14px;border-radius:10px}
 </style></head><body><main>
 <h1>🎟️ Dò Vé Số Việt Nam</h1>
-<div class="tabs" style="margin-bottom:12px"><button id="k1" onclick="kind(1)">🎫 Xổ số truyền thống</button><button id="k2" class="sec" onclick="kind(2)">💎 Vietlott</button></div>
+<div id="ban"></div>
+<div class="tabs" style="margin-bottom:12px"><button id="k1" onclick="kind(1)">🎫 Xổ số truyền thống</button><button id="k2" class="sec" onclick="kind(2)">💎 Vietlott</button><button id="k3" class="sec" onclick="kind(3)">🗂️ Vé của tôi</button></div>
+<div class="card hide" id="c3"><h2>🗂️ Vé của tôi</h2><div id="mine"></div><p class="mu">Vé được lưu ngay trên điện thoại của bạn, không gửi đi đâu. Khi mở app, vé sẽ tự được dò nếu đã có kết quả. Nên bấm “Nhắc lịch” để điện thoại nhắc bạn mở app lúc có kết quả.</p></div>
 <div class="card hide" id="c2">
  <label>Loại vé</label><select id="vg" onchange="vgc()"><option value="m">Mega 6/45 (quay Thứ 4, Thứ 6, Chủ nhật)</option><option value="p">Power 6/55 (quay Thứ 3, Thứ 5, Thứ 7)</option></select>
  <label>6 số trên vé của bạn (cách nhau bằng khoảng trắng)</label><input class="num" id="vt" inputmode="numeric" style="font-size:20px;letter-spacing:1px" placeholder="05 12 23 34 40 45">
@@ -72,6 +78,7 @@ input[type=range]{padding:0}
  <textarea id="rs" rows="7" placeholder="DB: 123456&#10;G1: 12345&#10;G2: 12345&#10;G3: 12345 12345&#10;G4: ..."></textarea>
  <button class="sec" onclick="demo()">Dùng kết quả mẫu để thử</button></details>
  <button onclick="check()">DÒ VÉ NGAY</button>
+ <button class="sec" onclick="saveFromForm()">💾 LƯU VÉ, TỰ DÒ KHI CÓ KẾT QUẢ</button>
  <p class="mu">Nguồn đối chiếu uy tín: <a href="https://www.minhngoc.net.vn" target="_blank" rel="noopener">Minh Ngọc</a> · <a href="https://xskt.com.vn" target="_blank" rel="noopener">XSKT</a> · <a href="https://www.xosodaiphat.com" target="_blank" rel="noopener">Đại Phát</a> · Cổng công ty XSKT từng tỉnh</p>
 </div>
 <div id="out"></div><p id="src" class="mu"></p>
@@ -83,7 +90,7 @@ input[type=range]{padding:0}
 <label>Ngày mở thưởng</label><input type="date" id="fdt" onchange="stChips();stNote()">
 <label>Đài phát hành</label><select id="fst" onchange="fsel();stNote()"></select><div id="stc"></div>
 <div id="fsw" style="display:none"><label>Ký hiệu vé (miền Bắc, vd 12AB)</label><input id="fsr" maxlength="4" placeholder="12AB"></div>
-<button onclick="goCheck()">✅ ĐÚNG, DÒ VÉ NGAY</button><button class="sec" onclick="again()">📷 Quét lại</button></div>
+<button onclick="goCheck()">✅ ĐÚNG, DÒ VÉ NGAY</button><button class="sec" onclick="saveFromScan()">💾 Lưu vé, dò sau</button><button class="sec" onclick="again()">📷 Quét lại</button></div>
 <div id="sact"><button onclick="snap()">📸 Chụp</button><button id="tbtn" class="sec" style="display:none" onclick="torch()">🔦 Đèn</button><button class="sec" onclick="$('f').click()">🖼️ Ảnh có sẵn</button><button class="sec" onclick="showForm([])">✔️ Xong / Gõ tay</button><button class="sec" onclick="closeScan()">✕ Đóng</button></div></div>
 <p class="mu">Cơ cấu giải thưởng có thể thay đổi theo từng công ty XSKT và từng thời kỳ; bản mẫu mang tính tham khảo; luôn đối chiếu kết quả chính thức của công ty XSKT phát hành. Thông tin thuế/chi tiêu không phải tư vấn tài chính hay pháp lý.</p>
 
@@ -102,19 +109,22 @@ function tab(n){$('p1').classList.toggle('hide',n!=1);$('t1').className=n==1?'':
 function pic(i){const f=i.files[0];if(!f)return;galleryScan(f);i.value=''}
 function demo(){if(isMB()){$('rs').value="DB: 12345\nKH: 1AB 2CD 3EF\nG1: 22222\nG2: 33333 44444\nG3: 55555 66666 77777 88888 99999 10101\nG4: 1111 2222 3333 4444\nG5: 5555 6666 7777 8888 9999 1010\nG6: 111 222 333\nG7: "+($('no').value||"12345").slice(-2)+" 34 56 78";return}const n=$('no').value||"123456";$('rs').value=`DB: 654321\nG1: 11111\nG2: 22222\nG3: 33333 44444\nG4: 55555 66666 77777 88888 99999 10101 20202\nG5: 3030\nG6: 4040 5050 6060\nG7: 707\nG8: ${n.slice(-2)}`}
 function parse(t){const r={};t.split(/\n/).forEach(l=>{const m=l.match(/^\s*(DB|G[1-8]|KH|ĐB|Đặc biệt)\s*[:\-]?\s*(.*)$/i);if(!m)return;let k=m[1].toUpperCase().replace('Đ','D');if(k.startsWith('DẶC')||k.startsWith('DAC'))k='DB';r[k]=(m[2].match(k==='KH'?/\d{1,2}[A-Za-z]{2}/g:/\d+/g)||[])});return r}
+function calc(n,R,mb,khRaw){
+  let hits=[],note="";const Z=mb?PN:PZ;
+ for(const k in Z){const [nm,d,m]=Z[k];(R[k]||[]).forEach(x=>{if(x.length>=d&&n.slice(-d)===x.slice(-d))hits.push({nm,m})})}
+ // Giải phụ đặc biệt: trùng 5 số cuối giải ĐB, sai số đầu tiên
+ const db=(R.DB||[])[0];
+ if(mb){const nd=s=>s.toUpperCase().replace(/Đ/g,'D'),kh=nd((khRaw||'').trim()),dbk=(R.KH||[]).map(nd);
+  if(db&&n===db){if(dbk.length&&kh){if(!dbk.includes(kh)){hits=hits.filter(h=>h.nm!=="Giải Đặc biệt");hits.push({nm:"Giải phụ Đặc biệt",m:2.5e7})}}else note="Trùng 5 số giải Đặc biệt! Hãy đối chiếu ký hiệu vé: đúng ký hiệu là 500 triệu, sai ký hiệu là giải phụ 25 triệu."}
+  if(db&&n!==db&&n.slice(-2)===db.slice(-2))hits.push({nm:"Giải khuyến khích",m:4e4})}
+ else if(db&&n!==db){if(n.slice(1)===db.slice(1))hits.push({nm:"Giải phụ Đặc biệt",m:5e7});else if(n[0]===db[0]){let d=0;for(let i=1;i<6;i++)if(n[i]!==db[i])d++;if(d===1)hits.push({nm:"Giải khuyến khích",m:6e6})}}
+  return{hits,note}}
 function check(){
  const n=$('no').value.trim(),manual=$('rs').value.trim(),R=manual?parse(manual):lookup();
  if(!manual&&!Object.keys(R).length)return $('out').innerHTML=card('⏳ Chưa có kết quả đài này cho ngày đã chọn. Kết quả thường được cập nhật sau giờ quay (khoảng 16:30 miền Nam, 17:30 miền Trung, 18:30 miền Bắc). Hãy thử lại sau và kiểm tra đúng ngày, đúng đài.');
  const mb=isMB();if(!(mb?/^\d{5}$/:/^\d{6}$/).test(n))return $('out').innerHTML=card("⚠️ Hãy nhập đủ "+(mb?5:6)+" chữ số của vé.");
  if(!Object.keys(R).length)return $('out').innerHTML=card("⚠️ Hãy dán kết quả xổ số của ngày đó (hoặc bấm “Dùng kết quả mẫu”).");
- let hits=[],note="";const Z=mb?PN:PZ;
- for(const k in Z){const [nm,d,m]=Z[k];(R[k]||[]).forEach(x=>{if(x.length>=d&&n.slice(-d)===x.slice(-d))hits.push({nm,m})})}
- // Giải phụ đặc biệt: trùng 5 số cuối giải ĐB, sai số đầu tiên
- const db=(R.DB||[])[0];
- if(mb){const nd=s=>s.toUpperCase().replace(/Đ/g,'D'),kh=nd($('sr').value.trim()),dbk=(R.KH||[]).map(nd);
-  if(db&&n===db){if(dbk.length&&kh){if(!dbk.includes(kh)){hits=hits.filter(h=>h.nm!=="Giải Đặc biệt");hits.push({nm:"Giải phụ Đặc biệt",m:2.5e7})}}else note="Trùng 5 số giải Đặc biệt! Hãy đối chiếu ký hiệu vé: đúng ký hiệu là 500 triệu, sai ký hiệu là giải phụ 25 triệu."}
-  if(db&&n!==db&&n.slice(-2)===db.slice(-2))hits.push({nm:"Giải khuyến khích",m:4e4})}
- else if(db&&n!==db){if(n.slice(1)===db.slice(1))hits.push({nm:"Giải phụ Đặc biệt",m:5e7});else if(n[0]===db[0]){let d=0;for(let i=1;i<6;i++)if(n[i]!==db[i])d++;if(d===1)hits.push({nm:"Giải khuyến khích",m:6e6})}}
+ const {hits,note}=calc(n,R,mb,$('sr').value);
  if(!hits.length)return $('out').innerHTML=card(`<h2>😅 Rất tiếc, vé ${n} chưa trúng</h2><p>${FUN[Math.floor(Math.random()*FUN.length)]}</p>`);
  return win(hits,note)}
 function win(hits,note){const gross=hits.reduce((s,h)=>s+h.m,0),tax=hits.reduce((s,h)=>s+Math.max(0,h.m-1e7)*0.1,0),net=gross-tax;
@@ -134,7 +144,7 @@ function win(hits,note){const gross=hits.reduce((s,h)=>s+h.m,0),tax=hits.reduce(
  <table>${A.map(a=>`<tr><td>${a[0]} (${a[1]}%)</td><td>${vnd(net*a[1]/100)}</td></tr>`).join('')}</table>
  <small>Ý tưởng đầu tư an toàn: gửi tiết kiệm kỳ hạn tại ngân hàng lớn, trái phiếu Chính phủ, quỹ khẩn cấp 6 tháng chi tiêu, bảo hiểm sức khỏe, trả nợ lãi cao trước. Hãy tham khảo chuyên gia tài chính được cấp phép.</small></div>`}
 function card(h){return `<div class="card">${h}</div>`}
-function kind(n){const c=document.querySelector('main > .card:not(#c2)');c.classList.toggle('hide',n!=1);$('c2').classList.toggle('hide',n!=2);$('k1').className=n==1?'':'sec';$('k2').className=n==2?'':'sec';$('out').innerHTML=''}
+function kind(n){const c=document.querySelector('main > .card:not(#c2):not(#c3)');c.classList.toggle('hide',n!=1);$('c2').classList.toggle('hide',n!=2);$('c3').classList.toggle('hide',n!=3);$('k1').className=n==1?'':'sec';$('k2').className=n==2?'':'sec';$('k3').className=n==3?'':'sec';$('out').innerHTML='';if(n==3)renderMine()}
 function vgc(){const p=$('vg').value==='p';$('vj2w').classList.toggle('hide',!p);$('vh').textContent=p?'(6 số + số phụ ở cuối)':'(6 số)'}
 function vdemo(){$('vr').value=$('vg').value==='p'?'05 12 23 34 40 45 07':'05 12 23 34 40 45'}
 function check2(){const p=$('vg').value==='p',mx=p?55:45,nums=s=>(s.match(/\d+/g)||[]).map(Number),money=id=>+($(id).value.replace(/\D/g,''));
@@ -225,7 +235,7 @@ async function loop(){if(!loopOn)return;
   }catch(e){sst('Lỗi đọc: '+(e.message||e))}
   busy=false;if(done){loopOn=false;return showForm([])}}
  setTimeout(loop,250)}
-function showForm(others){loopOn=false;$('scan').classList.add('form');$('sres').classList.add('on');$('fst').innerHTML=$('pr').innerHTML;
+function showForm(others){loopOn=false;try{if(stream&&$('vid').videoWidth){const c=grabFull(),k=Math.min(1,360/c.width),t=document.createElement('canvas');t.width=Math.round(c.width*k);t.height=Math.round(c.height*k);t.getContext('2d').drawImage(c,0,0,t.width,t.height);S.img=t.toDataURL('image/jpeg',.55)}}catch(e){}$('scan').classList.add('form');$('sres').classList.add('on');$('fst').innerHTML=$('pr').innerHTML;
  $('fno').value=S.n||'';$('fdt').value=S.date||$('dt').value;$('fst').value=S.st||$('pr').value;$('fsr').value=S.sr||'';
  $('schips').innerHTML=(others||[]).map(x=>'<button class="sec" style="font-size:20px;letter-spacing:2px" onclick="$(\'fno\').value=\''+x+'\';fsel()">'+x+'</button>').join('');fsel();
  stChips();const miss=[!S.n&&'số vé',!S.st&&'đài',!S.date&&'ngày'].filter(Boolean);
@@ -261,9 +271,55 @@ function goCheck(){const n=$('fno').value.replace(/\D/g,'');if(n.length<5||n.len
  if(n.length===6&&/Miền Bắc/.test(st)){sst('⚠️ Vé 6 số là vé miền Nam/Trung, hãy chọn lại đài.');return}
  if(!$('fdt').value){sst('⚠️ Hãy chọn ngày mở thưởng.');return}
  const sr=$('fsr').value.trim().toUpperCase(),d=$('fdt').value;closeScan();$('pr').value=st;reg();$('no').value=n;$('dt').value=d;$('sr').value=sr;$('rs').value='';check();$('out').scrollIntoView({behavior:'smooth',block:'start'})}
+const MTS=new Set(['Huế','Phú Yên','Đắk Lắk','Quảng Nam','Đà Nẵng','Khánh Hòa','Bình Định','Quảng Trị','Quảng Bình','Gia Lai','Ninh Thuận','Quảng Ngãi','Đắk Nông','Kon Tum']);
+const pad2=x=>String(x).padStart(2,'0'),fmtDate=d=>d.split('-').reverse().join('/'),stName=x=>x.replace(' (Miền Bắc)',' (MB)');
+function nowVN(){return new Date(Date.now()+(new Date().getTimezoneOffset()+420)*60000)}
+function ldb(){try{return JSON.parse(localStorage.getItem('ves')||'[]')}catch(e){return[]}}
+function sdb(a){try{localStorage.setItem('ves',JSON.stringify(a));return true}catch(e){return false}}
+function evalT(t){const mb=/Miền Bắc/.test(t.st),R=DBR[t.date+'|'+(mb?'MB':t.st)],v=nowVN(),today=v.getFullYear()+'-'+pad2(v.getMonth()+1)+'-'+pad2(v.getDate());
+ if(!R||!Object.keys(R).length)return{s:(t.date>today||(t.date===today&&v.getHours()<19))?'wait':'none'};
+ const r=calc(t.no,R,mb,t.sr||'');if(!r.hits.length)return{s:'lose'};
+ const gross=r.hits.reduce((a,h)=>a+h.m,0),tax=r.hits.reduce((a,h)=>a+Math.max(0,h.m-1e7)*.1,0);return{s:'win',hits:r.hits,net:gross-tax,note:r.note}}
+function stHTML(e,t){if(e.s==='wait')return'⏳ Chờ kết quả (mở thưởng '+fmtDate(t.date)+')';if(e.s==='none')return'ℹ️ Chưa có kết quả đài này (có thể chưa được cập nhật)';if(e.s==='lose')return'😅 Chưa trúng. Hẹn vận may lần sau!';
+ return'<span style="color:var(--ok)">🎉 TRÚNG '+e.hits.map(h=>h.nm).join(', ')+'. Thực nhận khoảng '+vnd(e.net)+'</span>'+(e.note?'<div class="mu">⚠️ '+e.note+'</div>':'')}
+function addT(o){const a=ldb();if(a.some(x=>x.no===o.no&&x.date===o.date&&x.st===o.st))return{r:'dup'};const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);a.unshift({id,no:o.no,date:o.date,st:o.st,sr:o.sr||'',img:o.img||'',seen:false});
+ if(!sdb(a)){a[0].img='';if(!sdb(a))return{r:'full'}}return{r:'ok',id}}
+function doSave(o){const r=addT(o);let m;
+ if(r.r==='dup')m='ℹ️ Vé này đã có trong “Vé của tôi”.';else if(r.r==='full')m='⚠️ Bộ nhớ trên máy đã đầy, không lưu được. Hãy xóa bớt vé cũ.';
+ else{const e=evalT(o);m='✅ Đã lưu vé '+o.no+' ('+stName(o.st)+', '+fmtDate(o.date)+').'+(e.s==='wait'?' App sẽ tự dò khi có kết quả. Hãy thêm nhắc lịch để không quên.':e.s==='none'?' Đài này chưa có kết quả trong app, app sẽ tự dò khi kết quả được cập nhật.':' Đã có kết quả, hãy mở “Vé của tôi” để xem.')}
+ $('out').innerHTML=card(m+'<div class="tkb"><button onclick="kind(3)">🗂️ Vé của tôi</button>'+(r.id?'<button class="sec" onclick="mineAct(\''+r.id+'\',\'cal\')">📅 Thêm nhắc lịch</button>':'')+'</div>');autoCheck();return r}
+function saveFromForm(){const n=$('no').value.trim(),mb=isMB(),d=$('dt').value;
+ if(!(mb?/^\d{5}$/:/^\d{6}$/).test(n))return $('out').innerHTML=card('⚠️ Hãy nhập đủ '+(mb?5:6)+' chữ số của vé trước khi lưu.');
+ if(!d)return $('out').innerHTML=card('⚠️ Hãy chọn ngày mở thưởng.');
+ doSave({no:n,date:d,st:$('pr').value,sr:$('sr').value.trim().toUpperCase()})}
+function saveFromScan(){const n=$('fno').value.replace(/\D/g,'');if(n.length<5||n.length>6){sst('⚠️ Số vé cần 5 hoặc 6 chữ số.');return}
+ let st=$('fst').value;if(n.length===5&&!/Miền Bắc/.test(st)){const o=[...$('fst').options].find(x=>/Miền Bắc/.test(x.text));if(o)st=o.value}
+ if(n.length===6&&/Miền Bắc/.test(st)){sst('⚠️ Vé 6 số là vé miền Nam/Trung, hãy chọn lại đài.');return}
+ if(!$('fdt').value){sst('⚠️ Hãy chọn ngày mở thưởng.');return}
+ const o={no:n,date:$('fdt').value,st,sr:$('fsr').value.trim().toUpperCase(),img:S.img||''};closeScan();kind(1);doSave(o);$('out').scrollIntoView({behavior:'smooth',block:'start'})}
+function renderMine(){const a=ldb();let h=a.length?'':'<p class="mu">Chưa có vé nào. Hãy chụp hoặc nhập vé rồi bấm “Lưu vé”.</p>',ch=false;
+ a.forEach(t=>{const e=evalT(t);if(!t.seen&&(e.s==='win'||e.s==='lose')){t.seen=true;ch=true}
+  h+='<div class="tk">'+(t.img?'<img src="'+t.img+'" alt="">':'')+'<div style="flex:1"><div class="tkn">'+t.no+'</div><div class="mu">'+stName(t.st)+' · '+fmtDate(t.date)+(t.sr?' · '+t.sr:'')+'</div><div style="margin-top:4px;font-weight:600">'+stHTML(e,t)+'</div>'
+  +'<div class="tkb"><button onclick="mineAct(\''+t.id+'\',\'view\')">🔎 Xem chi tiết</button><button class="sec" onclick="mineAct(\''+t.id+'\',\'cal\')">📅 Nhắc lịch</button><a class="btn sec" style="width:auto" target="_blank" rel="noopener" href="'+gcal(t)+'">Google Lịch</a><button class="sec" onclick="mineAct(\''+t.id+'\',\'del\')">🗑️ Xóa</button></div></div></div>'});
+ $('mine').innerHTML=h;if(ch)sdb(a);autoCheck()}
+function autoCheck(){const a=ldb();$('k3').textContent='🗂️ Vé của tôi'+(a.length?' ('+a.length+')':'');let w=0,l=0;a.forEach(t=>{if(t.seen)return;const e=evalT(t);if(e.s==='win')w++;else if(e.s==='lose')l++});const b=$('ban');
+ if(!w&&!l){b.innerHTML='';return}
+ b.innerHTML='<div class="card" style="border:2px solid '+(w?'var(--ok)':'var(--bd)')+'"><b>'+(w?'🎉 Có '+w+' vé TRÚNG thưởng!':'📬 Có '+l+' vé đã có kết quả (chưa trúng)')+'</b>'+(w&&l?'<div class="mu">và '+l+' vé khác chưa trúng</div>':'')+'<button onclick="kind(3)">Xem Vé của tôi</button></div>'}
+function mineAct(id,op){const a=ldb(),t=a.find(x=>x.id===id);if(!t)return;
+ if(op==='del'){if(!confirm('Xóa vé '+t.no+'?'))return;sdb(a.filter(x=>x.id!==id));renderMine();return}
+ if(op==='cal'){dlIcs(t);return}
+ kind(1);$('pr').value=t.st;reg();$('no').value=t.no;$('dt').value=t.date;$('sr').value=t.sr||'';$('rs').value='';check();$('out').scrollIntoView({behavior:'smooth',block:'start'})}
+function evT(t){const r=/Miền Bắc/.test(t.st)?[19,0]:MTS.has(t.st)?[18,0]:[17,0],d=t.date.replace(/-/g,''),s=d+'T'+pad2(r[0])+pad2(r[1])+'00',e=d+'T'+pad2(r[0])+pad2(r[1]+15)+'00';
+ return{s,e,title:'Dò vé số '+t.no+' - '+stName(t.st),desc:'Đã có kết quả xổ số '+stName(t.st)+' ngày '+fmtDate(t.date)+'. Mở app Dò Vé Số để dò vé '+t.no+'.'}}
+function icsText(t){const x=evT(t),u=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+ return['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//DoVeSo//VN','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:'+t.id+'@doveso','DTSTAMP:'+u,'DTSTART:'+x.s,'DTEND:'+x.e,'SUMMARY:'+x.title,'DESCRIPTION:'+x.desc,'BEGIN:VALARM','TRIGGER:PT0M','ACTION:DISPLAY','DESCRIPTION:'+x.title,'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n')}
+function dlIcs(t){const b=new Blob([icsText(t)],{type:'text/calendar;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='nhac-do-ve-'+t.no+'.ics';document.body.appendChild(a);a.click();a.remove()}
+function gcal(t){const x=evT(t);return'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(x.title)+'&details='+encodeURIComponent(x.desc)+'&dates='+x.s+'/'+x.e+'&ctz=Asia%2FHo_Chi_Minh'}
 window.addEventListener('resize',layout);
 let DBR={};
-fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.'}).catch(()=>{});
+fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.';autoCheck()}).catch(()=>{autoCheck()});
+function reloadRes(){fetch('results.json?v='+Date.now()).then(r=>r.json()).then(j=>{DBR=j.draws||{};$('src').textContent='Kết quả cập nhật: '+(j.updated||'')+'. Nguồn: '+(j.source||'')+'. Hãy luôn đối chiếu với kết quả chính thức.';autoCheck();if(!$('c3').classList.contains('hide'))renderMine()}).catch(()=>{})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)reloadRes()});
 function lookup(){return DBR[$('dt').value+'|'+(isMB()?'MB':$('pr').value)]||{}}
 tab(2);
 </script></main></body></html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dán nhanh kết quả (quản trị)</title>
+<style>
+:root{--bg:#fff8ee;--card:#fff;--tx:#2b2118;--mu:#7a6a58;--ac:#d62828;--ok:#1b8a4b;--bd:#ecdcc4}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1712;--card:#272019;--tx:#f5ece0;--mu:#b5a590;--bd:#3d3326}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}h1{font-size:21px;margin:4px 0 8px}h2{font-size:17px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:14px;color:var(--mu);margin:8px 0 4px}
+input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+button{display:block;width:100%;padding:13px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:700 16px inherit;margin-top:10px;cursor:pointer}
+button.sec{background:transparent;color:var(--ac);border:2px solid var(--ac)}
+.mu{color:var(--mu);font-size:14px}.err{color:#c1121f;font-weight:600}.ok{color:var(--ok);font-weight:600}
+.row{display:grid;grid-template-columns:70px 1fr;gap:6px;align-items:center;margin-top:4px}.row b{font-size:14px}
+.pend{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px dashed var(--bd);padding:6px 0}.pend button{width:auto;margin:0;padding:6px 10px;font-size:14px}
+</style></head><body><main>
+<h1>📋 Dán nhanh kết quả xổ số</h1>
+<p class="mu">Trang dành cho người quản lý. Sao chép bảng kết quả từ trang web uy tín, dán vào đây, kiểm tra lại, rồi tải file results.json lên GitHub. Trang này không thay đổi dữ liệu thật cho đến khi bạn tải file lên.</p>
+<div class="card"><div id="base" class="mu">Đang tải results.json...</div>
+<label>Hoặc chọn file results.json từ máy (nếu không tự tải được)</label><input type="file" id="bf" accept=".json,application/json">
+<label>Tên nguồn sẽ hiện trong app</label><input id="src" value="Công ty XSKT các tỉnh và trang kết quả uy tín (nhập tay có đối chiếu)"></div>
+<div class="card"><h2>1. Dán bảng kết quả</h2>
+<p class="mu">Mỗi lần dán một bảng: một miền, đủ từ giải cao nhất đến giải thấp nhất (có thể nhiều đài cạnh nhau). Không cần dán phần thống kê lô tô.</p>
+<textarea id="tx" rows="9" placeholder="Dán nội dung đã sao chép vào đây"></textarea>
+<button onclick="doParse()">ĐỌC KẾT QUẢ</button><div id="pmsg" style="margin-top:8px"></div></div>
+<div id="prev"></div>
+<div class="card"><h2>2. Danh sách chờ lưu</h2><div id="pend" class="mu">Chưa có.</div>
+<button onclick="dl()">⬇️ TẢI results.json</button><button class="sec" onclick="cp()">📋 Sao chép nội dung</button><div id="omsg" style="margin-top:8px"></div>
+<p class="mu">Sau khi tải: vào kho Doveso trên GitHub, Add file → Upload files, kéo file results.json vào, Commit changes. Mất 1–3 phút app sẽ cập nhật.</p></div>
+<script>
+const $=id=>document.getElementById(id);
+const AL={"TP.HCM":["HO CHI MINH","TPHCM","TP HCM","SAI GON"],"Đồng Tháp":["DONG THAP"],"Cà Mau":["CA MAU"],"Bến Tre":["BEN TRE"],"Vũng Tàu":["VUNG TAU","BA RIA"],"Bạc Liêu":["BAC LIEU"],"Đồng Nai":["DONG NAI"],"Cần Thơ":["CAN THO"],"Sóc Trăng":["SOC TRANG"],"Tây Ninh":["TAY NINH"],"An Giang":["AN GIANG"],"Bình Thuận":["BINH THUAN"],"Vĩnh Long":["VINH LONG"],"Bình Dương":["BINH DUONG"],"Trà Vinh":["TRA VINH"],"Long An":["LONG AN"],"Bình Phước":["BINH PHUOC"],"Hậu Giang":["HAU GIANG"],"Tiền Giang":["TIEN GIANG"],"Kiên Giang":["KIEN GIANG"],"Đà Lạt":["DA LAT","LAM DONG"],"Đà Nẵng":["DA NANG"],"Khánh Hòa":["KHANH HOA"],"Huế":["THUA THIEN HUE","THUA THIEN","HUE"],"Phú Yên":["PHU YEN"],"Quảng Nam":["QUANG NAM"],"Quảng Ngãi":["QUANG NGAI"],"Bình Định":["BINH DINH"],"Quảng Bình":["QUANG BINH"],"Quảng Trị":["QUANG TRI"],"Gia Lai":["GIA LAI"],"Ninh Thuận":["NINH THUAN"],"Đắk Lắk":["DAK LAK"],"Đắk Nông":["DAK NONG"],"Kon Tum":["KON TUM"],"Hà Nội (Miền Bắc)":["THU DO","HA NOI"],"Nam Định (Miền Bắc)":["NAM DINH"],"Thái Bình (Miền Bắc)":["THAI BINH"],"Quảng Ninh (Miền Bắc)":["QUANG NINH"],"Bắc Ninh (Miền Bắc)":["BAC NINH"],"Hải Phòng (Miền Bắc)":["HAI PHONG"]};
+const SCH=[['Tiền Giang','Kiên Giang','Đà Lạt','Kon Tum','Khánh Hòa','Huế','Thái Bình'],
+['TP.HCM','Đồng Tháp','Cà Mau','Huế','Phú Yên','Hà Nội'],
+['Bến Tre','Vũng Tàu','Bạc Liêu','Đắk Lắk','Quảng Nam','Quảng Ninh'],
+['Đồng Nai','Cần Thơ','Sóc Trăng','Đà Nẵng','Khánh Hòa','Bắc Ninh'],
+['Tây Ninh','An Giang','Bình Thuận','Bình Định','Quảng Trị','Quảng Bình','Hà Nội'],
+['Vĩnh Long','Bình Dương','Trà Vinh','Gia Lai','Ninh Thuận','Hải Phòng'],
+['TP.HCM','Long An','Bình Phước','Hậu Giang','Đà Nẵng','Quảng Ngãi','Đắk Nông','Nam Định']];
+function dayList(ds){if(!ds)return[];const[y,m,d]=ds.split('-').map(Number),a=SCH[new Date(y,m-1,d).getDay()];return a?a.map((x,i)=>i===a.length-1?x+' (Miền Bắc)':x):[]}
+
+AL['TP.HCM'].push('XSHCM','SXHCM');
+const NAM=[['G8',1,2],['G7',1,3],['G6',3,4],['G5',1,4],['G4',7,5],['G3',2,5],['G2',1,5],['G1',1,5],['DB',1,6]];
+const MBP=[['DB',1,5],['G1',1,5],['G2',2,5],['G3',6,5],['G4',4,4],['G5',6,4],['G6',3,3],['G7',4,2]];
+const NAMES={DB:'Đặc biệt',G1:'Giải nhất',G2:'Giải nhì',G3:'Giải ba',G4:'Giải tư',G5:'Giải năm',G6:'Giải sáu',G7:'Giải bảy',G8:'Giải tám'};
+const ASCU=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'D').toUpperCase();
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;let p=[...Array(n+1).keys()];for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+function findDate(tx){const re=/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4}|\d{2})(?!\d)/g;let m;while((m=re.exec(tx))){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;const t=new Date(y,mo-1,d);if(y>=2024&&y<=2040&&t.getMonth()===mo-1&&t.getDate()===d)return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0')}return ''}
+function toks(txt){const t=txt.replace(/\d{1,2}\s*[\/\-.]\s*\d{1,2}\s*[\/\-.]\s*\d{2,4}/g,' ').replace(/\d{1,2}:\d{2}/g,' ');return t.split(/[^0-9A-Za-z\u00C0-\u1EF9]+/).filter(x=>/^\d{2,6}$/.test(x))}
+function variants(P,N){const out=[];[false,true].forEach(rev=>{const G=rev?[...P].reverse():P;
+ {const lens=[];G.forEach(([k,c,d])=>{for(let i=0;i<N*c;i++)lens.push(d)});out.push({lens,asm:sl=>{const r=Array.from({length:N},()=>({}));let p=0;G.forEach(([k,c])=>{for(let s=0;s<N;s++){r[s][k]=sl.slice(p,p+c);p+=c}});return r}})}
+ if(N>1){const lens=[];for(let s=0;s<N;s++)G.forEach(([k,c,d])=>{for(let i=0;i<c;i++)lens.push(d)});out.push({lens,asm:sl=>{const r=[];let p=0;for(let s=0;s<N;s++){const o={};G.forEach(([k,c])=>{o[k]=sl.slice(p,p+c);p+=c});r.push(o)}return r}})}});return out}
+function matchAt(T,lens){for(let i=0;i+lens.length<=T.length;i++){let ok=true;for(let k=0;k<lens.length;k++)if(T[i+k].length!==lens[k]){ok=false;break}if(ok)return i}return -1}
+function detStations(txt,date){const W=ASCU(txt).replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(Boolean),found=[];
+ for(const k in AL){if(/Miền Bắc/.test(k))continue;let pos=1e9;for(const a of AL[k]){const aw=a.split(' ');for(let i=0;i+aw.length<=W.length;i++)if(W.slice(i,i+aw.length).join(' ')===a){pos=Math.min(pos,i);break}}if(pos<1e9)found.push([pos,k])}
+ found.sort((x,y)=>x[0]-y[0]);let l=found.map(x=>x[1]);const day=date?dayList(date):[];if(day.length){const f=l.filter(x=>day.includes(x));if(f.length)l=f}return l}
+function parsePaste(txt){const T=toks(txt),date=findDate(txt);
+ for(let N=6;N>=1;N--)for(const v of variants(NAM,N)){const i=matchAt(T,v.lens);if(i>=0){const cols=v.asm(T.slice(i,i+v.lens.length)),st=detStations(txt,date);return{ok:true,region:'N',N,date,cols,st}}}
+ for(const v of variants(MBP,1)){const i=matchAt(T,v.lens);if(i>=0){const cols=v.asm(T.slice(i,i+v.lens.length)),u=ASCU(txt),kh=[...new Set((u.match(/\b\d{1,2}[A-Z]{2}\b/g)||[]))].slice(0,20);return{ok:true,region:'B',N:1,date,cols,st:['MB'],kh}}}
+ return{ok:false,err:'Không nhận ra bố cục bảng. Hãy sao chép đúng phần bảng kết quả, đủ tất cả các giải (không thiếu, không thừa). Tìm thấy '+T.length+' số.'}}
+let BASE={draws:{}},PEND={},CUR=null;
+function doParse(){const r=parsePaste($('tx').value);CUR=r;const m=$('pmsg'),pv=$('prev');pv.innerHTML='';
+ if(!r.ok){m.innerHTML='<span class="err">'+r.err+'</span>';return}
+ m.innerHTML='<span class="ok">✓ Đọc được '+r.N+' đài, miền '+(r.region==='B'?'Bắc':'Nam/Trung')+'. Hãy so từng số với trang web trước khi thêm.</span>';
+ const spec=r.region==='B'?MBP:NAM,opts=Object.keys(AL).filter(k=>!/Miền Bắc/.test(k));
+ let h='<div class="card"><h2>Kiểm tra kết quả</h2><label>Ngày mở thưởng</label><input type="date" id="pdt" value="'+(r.date||'')+'">'+(r.date?'':'<div class="err">Chưa thấy ngày trong nội dung dán, hãy chọn ngày.</div>');
+ r.cols.forEach((c,i)=>{h+='<div style="border-top:2px solid var(--bd);margin-top:12px;padding-top:6px">';
+  if(r.region==='B')h+='<b>Miền Bắc</b>';else h+='<label>Đài (cột '+(i+1)+')</label><select class="stc"><option value="">— chọn đài —</option>'+opts.map(o=>'<option'+(r.st[i]===o?' selected':'')+'>'+o+'</option>').join('')+'</select>';
+  spec.slice().sort((a,b)=>{const o=['DB','G1','G2','G3','G4','G5','G6','G7','G8'];return o.indexOf(a[0])-o.indexOf(b[0])}).forEach(([k])=>{h+='<div class="row"><b>'+NAMES[k]+'</b><input data-c="'+i+'" data-k="'+k+'" value="'+c[k].join(' ')+'"></div>'});
+  h+='</div>'});
+ if(r.region==='B')h+='<label>Ký hiệu giải Đặc biệt (cách nhau bằng dấu cách, bỏ trống nếu không có)</label><input id="pkh" value="'+(r.kh||[]).join(' ')+'">';
+ h+='<button onclick="addPend()">➕ THÊM VÀO DANH SÁCH CHỜ</button><div id="amsg" style="margin-top:8px"></div></div>';pv.innerHTML=h}
+function addPend(){const r=CUR;if(!r||!r.ok)return;const date=$('pdt').value,spec=r.region==='B'?MBP:NAM,A=$('amsg');if(!date){A.innerHTML='<span class="err">Hãy chọn ngày.</span>';return}
+ const sts=[...document.querySelectorAll('.stc')].map(x=>x.value),add=[];
+ for(let i=0;i<r.cols.length;i++){const st=r.region==='B'?'MB':sts[i];if(!st){A.innerHTML='<span class="err">Hãy chọn đài cho cột '+(i+1)+'.</span>';return}
+  const d={};for(const [k,c,len] of spec){const v=(document.querySelector('[data-c="'+i+'"][data-k="'+k+'"]').value.match(/\d+/g)||[]);if(v.length!==c||v.some(x=>x.length!==len)){A.innerHTML='<span class="err">'+(r.region==='B'?'MB':st)+' – '+NAMES[k]+': cần '+c+' số, mỗi số '+len+' chữ số.</span>';return}d[k]=v}
+  if(r.region==='B'){const kh=(($('pkh').value||'').toUpperCase().match(/\d{1,2}[A-Z]{2}/g)||[]);if(kh.length)d.KH=kh}
+  add.push([date+'|'+st,d])}
+ if(new Set(add.map(x=>x[0])).size!==add.length){A.innerHTML='<span class="err">Hai cột đang chọn cùng một đài.</span>';return}
+ add.forEach(([k,d])=>PEND[k]=d);A.innerHTML='<span class="ok">✓ Đã thêm '+add.length+' kỳ quay.</span>';$('tx').value='';$('prev').innerHTML='';$('pmsg').innerHTML='';CUR=null;showPend()}
+function showPend(){const ks=Object.keys(PEND).sort();$('pend').innerHTML=ks.length?ks.map(k=>'<div class="pend"><span>'+k.replace('|',' · ')+'</span><button class="sec" onclick="rm(\''+k+'\')">Xóa</button></div>').join(''):'Chưa có.'}
+function rm(k){delete PEND[k];showPend()}
+function merged(){const d={...(BASE.draws||{}),...PEND},cut=new Date(Date.now()-120*864e5).toISOString().slice(0,10);Object.keys(d).forEach(k=>{if(k.split('|')[0]<cut)delete d[k]});const v=new Date(Date.now()+7*36e5),p=x=>String(x).padStart(2,'0');
+ return{updated:p(v.getUTCDate())+'/'+p(v.getUTCMonth()+1)+'/'+v.getUTCFullYear()+' '+p(v.getUTCHours())+':'+p(v.getUTCMinutes()),source:$('src').value,draws:Object.fromEntries(Object.keys(d).sort().map(k=>[k,d[k]]))}}
+function dl(){if(!Object.keys(PEND).length){$('omsg').innerHTML='<span class="err">Danh sách chờ đang trống.</span>';return}const b=new Blob([JSON.stringify(merged(),null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='results.json';document.body.appendChild(a);a.click();a.remove();$('omsg').innerHTML='<span class="ok">✓ Đã tải results.json. Hãy tải file này lên GitHub.</span>'}
+async function cp(){if(!Object.keys(PEND).length){$('omsg').innerHTML='<span class="err">Danh sách chờ đang trống.</span>';return}try{await navigator.clipboard.writeText(JSON.stringify(merged(),null,1));$('omsg').innerHTML='<span class="ok">✓ Đã sao chép.</span>'}catch(e){$('omsg').innerHTML='<span class="err">Không sao chép được, hãy dùng nút Tải.</span>'}}
+async function loadBase(){try{const r=await fetch('results.json?v='+Date.now());BASE=await r.json();$('base').textContent='Đã tải results.json: '+Object.keys(BASE.draws||{}).length+' kỳ quay, cập nhật '+(BASE.updated||'?')}catch(e){BASE={draws:{}};$('base').textContent='Không tự tải được results.json. Hãy chọn file bên dưới, hoặc cứ tiếp tục để tạo file mới (cẩn thận: file mới sẽ không có dữ liệu cũ).'}}
+$('bf').onchange=async e=>{try{BASE=JSON.parse(await e.target.files[0].text());$('base').textContent='Đã nạp file: '+Object.keys(BASE.draws||{}).length+' kỳ quay.'}catch(x){$('base').textContent='File không đọc được.'}};
+loadBase();
+</script></main></body></html>
